@@ -1,0 +1,177 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+        x:Class="TicketSystem.MainWindow"
+        Width="1320" Height="820"
+        MinWidth="1120" MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Title="Ticket System">
+
+  <Grid ColumnDefinitions="260,*">
+
+    <!-- LEVÉ MENU -->
+    <Border Background="#EAF3FF" BorderBrush="#D3E4FF" BorderThickness="0,0,1,0">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" Margin="14">
+        <TextBlock Text="Ticket System"
+                   FontSize="28"
+                   FontWeight="Bold"
+                   Margin="4,4,4,16"/>
+
+        <Button Grid.Row="1"
+                Content="Dashboard"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Click="OpenDashboard_Click"/>
+
+        <Button Grid.Row="2"
+                Content="Vytvořit nový ticket"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Margin="0,8,0,0"
+                Click="OpenNewTicket_Click"/>
+
+        <Button Grid.Row="3"
+                x:Name="AllTicketsButton"
+                Content="Všechny tickety"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Margin="0,8,0,0"
+                Click="OpenAllTickets_Click"/>
+
+        <Button Grid.Row="4"
+                Content="Obnovit data"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Margin="0,8,0,0"
+                Click="RefreshData_Click"/>
+      </Grid>
+    </Border>
+
+    <!-- PRAVÁ STRANA -->
+    <Grid Grid.Column="1" Margin="18">
+
+      <!-- DASHBOARD -->
+      <StackPanel x:Name="DashboardView" Spacing="12">
+        <TextBlock Text="Dashboard" FontSize="34" FontWeight="Bold"/>
+        <TextBlock Text="Přehled systému ticketů" Opacity="0.72"/>
+
+        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10" Margin="0,8,0,0">
+          <Border Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="14">
+            <StackPanel>
+              <TextBlock Text="Celkem ticketů" Opacity="0.7"/>
+              <TextBlock x:Name="TotalTicketsText" Text="0" FontSize="30" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="14">
+            <StackPanel>
+              <TextBlock Text="Nové (24h)" Opacity="0.7"/>
+              <TextBlock x:Name="NewTodayText" Text="0" FontSize="30" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="14">
+            <StackPanel>
+              <TextBlock Text="Otevřené" Opacity="0.7"/>
+              <TextBlock x:Name="OpenTicketsText" Text="0" FontSize="30" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="3" Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="14">
+            <StackPanel>
+              <TextBlock Text="Uzavřené" Opacity="0.7"/>
+              <TextBlock x:Name="ClosedTicketsText" Text="0" FontSize="30" FontWeight="Bold"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <Grid ColumnDefinitions="1.2*,1*" ColumnSpacing="10">
+          <Border Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="12">
+            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+              <TextBlock Text="Nejnovější tickety (klikni pro detail)" FontSize="20" FontWeight="SemiBold"/>
+              <ListBox Grid.Row="1"
+                       x:Name="RecentTicketsList"
+                       SelectionChanged="RecentTicketsList_SelectionChanged"
+                       Height="460"/>
+            </Grid>
+          </Border>
+
+          <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="12">
+            <StackPanel>
+              <TextBlock Text="Počet ticketů za den (7 dní)" FontSize="20" FontWeight="SemiBold"/>
+              <lvc:CartesianChart x:Name="TicketsChart" Height="460" Margin="0,8,0,0"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+          <Grid ColumnDefinitions="Auto,280,*" ColumnSpacing="10" Margin="0,4,0,4">
+            <TextBlock Text="Aktivní uživatel:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Column="1" x:Name="CurrentUserCombo" SelectionChanged="CurrentUserCombo_SelectionChanged"/>
+            <TextBlock Grid.Column="2" x:Name="CurrentUserInfoText" VerticalAlignment="Center" Opacity="0.75"/>
+          </Grid>
+      </StackPanel>
+
+      <!-- NOVÝ TICKET -->
+      <Border x:Name="NewTicketView"
+              IsVisible="False"
+              Background="#FFFFFF"
+              BorderBrush="#E5EAF1"
+              BorderThickness="1"
+              CornerRadius="12"
+              Padding="18">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Vytvořit nový ticket" FontSize="32" FontWeight="Bold"/>
+          <TextBlock Text="Vyplň informace a odešli požadavek." Opacity="0.72"/>
+
+          <TextBlock Text="Nadpis"/>
+          <TextBox x:Name="NadpisInput"/>
+
+          <TextBlock Text="Popis"/>
+          <TextBox x:Name="PopisekInput" AcceptsReturn="True" Height="180" TextWrapping="Wrap"/>
+
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+            <StackPanel>
+              <TextBlock Text="Priorita"/>
+              <ComboBox x:Name="PrioritaInput" SelectedIndex="1">
+                <ComboBoxItem Content="Nízká"/>
+                <ComboBoxItem Content="Střední"/>
+                <ComboBoxItem Content="Vysoká"/>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="Kategorie"/>
+              <TextBox x:Name="KategorieInput"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Text="Status"/>
+              <ComboBox x:Name="StatusInput" SelectedIndex="0" IsEnabled="False">
+                <ComboBoxItem Content="Otevřený"/>
+              </ComboBox>
+            </StackPanel>
+          </Grid>
+
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Vyčistit" Click="ClearNewTicketForm_Click"/>
+            <Button Content="Uložit ticket" Click="SaveTicket_Click"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- VŠECHNY TICKETY -->
+      <Border x:Name="AllTicketsView"
+              IsVisible="False"
+              Background="#FFFFFF"
+              BorderBrush="#E5EAF1"
+              BorderThickness="1"
+              CornerRadius="12"
+              Padding="14">
+        <Grid RowDefinitions="Auto,*" RowSpacing="8">
+          <TextBlock Text="Všechny tickety (klikni pro detail)" FontSize="26" FontWeight="Bold"/>
+          <ListBox Grid.Row="1"
+                   x:Name="AllTicketsList"
+                   SelectionChanged="AllTicketsList_SelectionChanged"/>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

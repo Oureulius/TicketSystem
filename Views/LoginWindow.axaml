@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TicketSystem.LoginWindow"
+        Width="430" Height="290"
+        MinWidth="430" MinHeight="290"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Title="Přihlášení">
+
+  <Border Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="18">
+    <StackPanel Spacing="10">
+      <TextBlock Text="Přihlášení do Ticket System" FontSize="24" FontWeight="Bold"/>
+      <TextBlock Text="Zadejte přihlašovací údaje." Opacity="0.72"/>
+
+      <TextBlock Text="Login"/>
+      <TextBox x:Name="LoginTextBox"/>
+
+      <TextBlock Text="Heslo"/>
+      <TextBox x:Name="PasswordTextBox"/>
+
+      <TextBlock x:Name="ErrorText"
+                 Foreground="#C62828"
+                 Text=""
+                 TextWrapping="Wrap"
+                 MinHeight="22"/>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="Konec" Click="Exit_Click"/>
+        <Button Content="Přihlásit" Click="Login_Click"/>
+      </StackPanel>
+    </StackPanel>
+  </Border>
+</Window>

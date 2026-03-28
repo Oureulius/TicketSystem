@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TicketSystem.TicketDetailWindow"
+        Width="900" Height="700"
+        MinWidth="820" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Title="Detail ticketu">
+
+  <Grid Margin="18" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="10">
+    <TextBlock Grid.Row="0" x:Name="TitleText" FontSize="28" FontWeight="Bold"/>
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <TextBlock Text="ID:" FontWeight="SemiBold"/>
+      <TextBlock Grid.Column="1" x:Name="IdText"/>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <TextBlock Text="Status / Priorita:" FontWeight="SemiBold"/>
+      <TextBlock Grid.Column="1" x:Name="StatusPriorityText"/>
+    </Grid>
+
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <TextBlock Text="Kategorie:" FontWeight="SemiBold"/>
+      <TextBlock Grid.Column="1" x:Name="CategoryText"/>
+    </Grid>
+
+    <Grid Grid.Row="4" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+      <TextBlock Text="Majitel:" FontWeight="SemiBold"/>
+      <TextBlock Grid.Column="1" x:Name="OwnerText"/>
+    </Grid>
+
+    <Grid Grid.Row="5" ColumnDefinitions="1.2*,1*" ColumnSpacing="12">
+      <StackPanel Grid.Column="0" Spacing="6">
+        <TextBlock Text="Popis" FontWeight="SemiBold"/>
+        <Border Background="#F7F9FC" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="8" Padding="12">
+          <ScrollViewer Height="240">
+            <TextBlock x:Name="DescriptionText" TextWrapping="Wrap"/>
+          </ScrollViewer>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Spacing="6">
+        <TextBlock Text="Komentáře" FontWeight="SemiBold"/>
+        <ListBox x:Name="CommentsList" Height="240"/>
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Grid.Row="6" Text="Přidat komentář" FontWeight="SemiBold"/>
+    <TextBox Grid.Row="7"
+             x:Name="NewCommentTextBox"
+             AcceptsReturn="True"
+             TextWrapping="Wrap"
+             MinHeight="90"/>
+
+    <StackPanel Grid.Row="8"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8"
+                Margin="0,6,0,0">
+      <Button Content="💬 Přidat komentář" Click="AddCommentButton_Click"/>
+      <Button x:Name="CloseTicketButton" Content="✅ Uzavřít ticket" Click="CloseTicketButton_Click"/>
+      <Button Content="Zavřít okno" Click="CloseWindow_Click"/>
+    </StackPanel>
+  </Grid>
+</Window>
