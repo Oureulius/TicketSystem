@@ -22,6 +22,8 @@ namespace TicketSystem
             _ticket = ticket;
             FillData();
             LoadComments();
+            var isAdmin = string.Equals(MainWindow.CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
+            DeleteTicketButton.IsVisible = isAdmin;
         }
 
         private void FillData()
@@ -64,6 +66,17 @@ namespace TicketSystem
                 return;
 
             _ticketRepo.CloseTicket(_ticket.Id);
+            Changed = true;
+            Close();
+        }
+
+        private async void DeleteTicket_Click(object? sender, RoutedEventArgs e)
+        {
+            var isAdmin = string.Equals(MainWindow.CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
+            if (!isAdmin) 
+                return;
+
+            _ticketRepo.Delete(_ticket.Id);
             Changed = true;
             Close();
         }

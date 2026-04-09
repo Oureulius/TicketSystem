@@ -139,8 +139,12 @@
               </ComboBox>
             </StackPanel>
             <StackPanel Grid.Column="1">
-              <TextBlock Text="Kategorie"/>
-              <TextBox x:Name="KategorieInput"/>
+				<TextBlock Text="Kategorie"/>
+				<ComboBox x:Name="Kategorie" SelectedIndex="1">
+					<ComboBoxItem Content="Kancelář"/>
+					<ComboBoxItem Content="Microslop"/>
+					<ComboBoxItem Content="Dárky na Vánoce"/>
+				</ComboBox>
             </StackPanel>
             <StackPanel Grid.Column="2">
               <TextBlock Text="Status"/>

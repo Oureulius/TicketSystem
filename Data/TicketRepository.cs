@@ -88,5 +88,16 @@ namespace TicketSystem.Data
             cmd.Parameters.AddWithValue("@id", id);
             cmd.ExecuteNonQuery();
         }
+
+        public void Delete(int id)
+        {
+            using var conn = new SQLiteConnection(_connStr);
+            conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "DELETE FROM Tickets WHERE Id = $id";
+            cmd.Parameters.AddWithValue("$id", id);
+            cmd.ExecuteNonQuery();
+        }
     }
 }

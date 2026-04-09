@@ -57,8 +57,9 @@
                 HorizontalAlignment="Right"
                 Spacing="8"
                 Margin="0,6,0,0">
-      <Button Content="💬 Přidat komentář" Click="AddCommentButton_Click"/>
-      <Button x:Name="CloseTicketButton" Content="✅ Uzavřít ticket" Click="CloseTicketButton_Click"/>
+      <Button Content="Přidat komentář" Click="AddCommentButton_Click"/>
+      <Button x:Name="CloseTicketButton" Content="Uzavřít ticket" Click="CloseTicketButton_Click"/>
+	  <Button x:Name="DeleteTicketButton" Content="Smazat ticket" Background="#E74C3C" Foreground="White" IsVisible="False" Click="DeleteTicket_Click"/>
       <Button Content="Zavřít okno" Click="CloseWindow_Click"/>
     </StackPanel>
   </Grid>

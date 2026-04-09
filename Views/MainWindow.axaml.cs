@@ -186,10 +186,13 @@ namespace TicketSystem
 
         private async void RecentTicketsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (RecentTicketsList.SelectedIndex < 0 || RecentTicketsList.SelectedIndex >= _recentTicketBacking.Count)
+            var selectedIndex = RecentTicketsList.SelectedIndex;
+            if (selectedIndex < 0 || selectedIndex >= _recentTicketBacking.Count)
                 return;
 
-            var selected = _recentTicketBacking[RecentTicketsList.SelectedIndex];
+            var selected = _recentTicketBacking[selectedIndex];
+            RecentTicketsList.SelectedIndex = -1;
+
             var detailWindow = new TicketDetailWindow(selected);
             await detailWindow.ShowDialog(this);
 
@@ -206,14 +209,17 @@ namespace TicketSystem
             if (!IsAdmin())
                 return;
 
-            if (AllTicketsList.SelectedIndex < 0)
+            var selectedIndex = AllTicketsList.SelectedIndex;
+            if (selectedIndex < 0)
                 return;
 
             var ordered = Tickets.OrderByDescending(t => t.Vytvoreno).ToList();
-            if (AllTicketsList.SelectedIndex >= ordered.Count)
+            if (selectedIndex >= ordered.Count)
                 return;
 
-            var selected = ordered[AllTicketsList.SelectedIndex];
+            var selected = ordered[selectedIndex];
+            AllTicketsList.SelectedIndex = -1;
+
             var detailWindow = new TicketDetailWindow(selected);
             await detailWindow.ShowDialog(this);
 
@@ -233,6 +239,7 @@ namespace TicketSystem
                 return;
 
             var priorita = ((PrioritaInput.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Střední";
+            var kategorie = ((Kategorie.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Kancelář";
 
             var ticket = new Ticket
             {
@@ -240,7 +247,7 @@ namespace TicketSystem
                 Popisek = PopisekInput.Text ?? "",
                 Status = "Otevřený",
                 Priorita = priorita,
-                Kategorie = KategorieInput.Text ?? "",
+                Kategorie = kategorie,
                 VytvorenoUzivatelem = CurrentUserId,
                 PridelenoUzivatelem = null
             };
@@ -261,7 +268,6 @@ namespace TicketSystem
         {
             NadpisInput.Text = "";
             PopisekInput.Text = "";
-            KategorieInput.Text = "";
             PrioritaInput.SelectedIndex = 1;
         }
 
