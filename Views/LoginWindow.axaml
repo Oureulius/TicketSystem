@@ -15,8 +15,9 @@
       <TextBlock Text="Login"/>
       <TextBox x:Name="LoginTextBox"/>
 
-      <TextBlock Text="Heslo"/>
-      <TextBox x:Name="PasswordTextBox"/>
+	  <TextBlock Text="Heslo"/>
+	  <TextBox x:Name="PasswordTextBox"
+			   PasswordChar="*"/>
 
       <TextBlock x:Name="ErrorText"
                  Foreground="#C62828"
