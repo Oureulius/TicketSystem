@@ -169,9 +169,17 @@
               BorderThickness="1"
               CornerRadius="12"
               Padding="14">
-        <Grid RowDefinitions="Auto,*" RowSpacing="8">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
           <TextBlock Text="Všechny tickety (klikni pro detail)" FontSize="26" FontWeight="Bold"/>
-          <ListBox Grid.Row="1"
+
+          <Grid Grid.Row="1" ColumnDefinitions="*,*,*,Auto" ColumnSpacing="10">
+            <ComboBox x:Name="AllPriorityFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
+            <ComboBox Grid.Column="1" x:Name="AllCategoryFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
+            <ComboBox Grid.Column="2" x:Name="AllCreatorFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
+            <Button Grid.Column="3" Content="Vyčistit" Click="ClearAllTicketsFilters_Click"/>
+          </Grid>
+
+          <ListBox Grid.Row="2"
                    x:Name="AllTicketsList"
                    SelectionChanged="AllTicketsList_SelectionChanged"/>
         </Grid>

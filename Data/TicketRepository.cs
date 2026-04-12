@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Text;
 using TicketSystem.Models;
+using System.Linq;
 
 namespace TicketSystem.Data
 {
@@ -11,6 +13,9 @@ namespace TicketSystem.Data
         private readonly string _connStr = DatabaseHelper.ConnectionString;
 
         public List<Ticket> GetAll()
+            => GetFiltered(null, null, null);
+
+        public List<Ticket> GetFiltered(string? priorita, string? kategorie, int? vytvorenoUzivatelem)
         {
             var list = new List<Ticket>();
 
@@ -20,9 +25,35 @@ namespace TicketSystem.Data
             using var fk = new SQLiteCommand("PRAGMA foreign_keys = ON;", conn);
             fk.ExecuteNonQuery();
 
-            var cmd = new SQLiteCommand("SELECT * FROM Tickets ORDER BY datetime(Vytvoreno) DESC", conn);
-            using var reader = cmd.ExecuteReader();
+            var sql = new StringBuilder(@"
+                SELECT Id, Nadpis, Popisek, Status, Priorita, Kategorie, Vytvoreno, ZmenaCasu, VytvorenoUzivatelem, PridelenoUzivatelem
+                FROM Tickets
+                WHERE 1=1");
 
+            using var cmd = new SQLiteCommand(conn);
+
+            if (!string.IsNullOrWhiteSpace(priorita))
+            {
+                sql.Append(" AND Priorita = @priorita");
+                cmd.Parameters.AddWithValue("@priorita", priorita);
+            }
+
+            if (!string.IsNullOrWhiteSpace(kategorie))
+            {
+                sql.Append(" AND Kategorie = @kategorie");
+                cmd.Parameters.AddWithValue("@kategorie", kategorie);
+            }
+
+            if (vytvorenoUzivatelem.HasValue)
+            {
+                sql.Append(" AND VytvorenoUzivatelem = @vytvorenoUzivatelem");
+                cmd.Parameters.AddWithValue("@vytvorenoUzivatelem", vytvorenoUzivatelem.Value);
+            }
+
+            sql.Append(" ORDER BY datetime(Vytvoreno) DESC");
+            cmd.CommandText = sql.ToString();
+
+            using var reader = cmd.ExecuteReader();
             while (reader.Read())
             {
                 list.Add(new Ticket
@@ -98,6 +129,46 @@ namespace TicketSystem.Data
             cmd.CommandText = "DELETE FROM Tickets WHERE Id = $id";
             cmd.Parameters.AddWithValue("$id", id);
             cmd.ExecuteNonQuery();
+        }
+
+        public List<string> GetDistinctPriorities()
+        {
+            const string sql = @"
+        SELECT DISTINCT Priorita
+        FROM Tickets
+        WHERE Priorita IS NOT NULL AND trim(Priorita) <> ''
+        ORDER BY Priorita COLLATE NOCASE;";
+            return GetDistinctStringValues(sql);
+        }
+
+        public List<string> GetDistinctCategories()
+        {
+            const string sql = @"
+        SELECT DISTINCT Kategorie
+        FROM Tickets
+        WHERE Kategorie IS NOT NULL AND trim(Kategorie) <> ''
+        ORDER BY Kategorie COLLATE NOCASE;";
+            return GetDistinctStringValues(sql);
+        }
+
+        private List<string> GetDistinctStringValues(string sql)
+        {
+            var list = new List<string>();
+
+            using var conn = new SQLiteConnection(_connStr);
+            conn.Open();
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var reader = cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                var value = reader[0]?.ToString();
+                if (!string.IsNullOrWhiteSpace(value))
+                    list.Add(value);
+            }
+
+            return list;
         }
     }
 }

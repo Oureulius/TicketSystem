@@ -15,6 +15,7 @@ namespace TicketSystem
     {
         private readonly TicketRepository _repo = new();
         private List<Ticket> _recentTicketBacking = new();
+        private List<Ticket> _allTicketsBacking = new();
 
         public ObservableCollection<Ticket> Tickets { get; } = new();
 
@@ -23,6 +24,8 @@ namespace TicketSystem
 
         public static int CurrentUserId { get; private set; } = 1;
         public static string CurrentUserRole { get; private set; } = "User";
+
+        private bool _isInitializingAllTicketsFilters;
 
         public MainWindow()
         {
@@ -171,10 +174,8 @@ namespace TicketSystem
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = true;
 
-            AllTicketsList.ItemsSource = Tickets
-                .OrderByDescending(t => t.Vytvoreno)
-                .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Vytvoreno:g}")
-                .ToList();
+            InitializeAllTicketsFilters();
+            ReloadAllTicketsFromDb();
         }
 
         private void RefreshData_Click(object? sender, RoutedEventArgs e)
@@ -210,14 +211,10 @@ namespace TicketSystem
                 return;
 
             var selectedIndex = AllTicketsList.SelectedIndex;
-            if (selectedIndex < 0)
+            if (selectedIndex < 0 || selectedIndex >= _allTicketsBacking.Count)
                 return;
 
-            var ordered = Tickets.OrderByDescending(t => t.Vytvoreno).ToList();
-            if (selectedIndex >= ordered.Count)
-                return;
-
-            var selected = ordered[selectedIndex];
+            var selected = _allTicketsBacking[selectedIndex];
             AllTicketsList.SelectedIndex = -1;
 
             var detailWindow = new TicketDetailWindow(selected);
@@ -228,7 +225,7 @@ namespace TicketSystem
                 LoadTickets();
                 RefreshDashboard();
                 BuildChart();
-                OpenAllTickets_Click(null, new RoutedEventArgs());
+                ReloadAllTicketsFromDb();
             }
         }
 
@@ -274,6 +271,90 @@ namespace TicketSystem
         private void CurrentUserCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             // Legacy věc - upravit uživatele se nedá, ale combobox zůstalo. Kdyby se náhodou změnil přihlášený uživatel, tak se to tady zachytí.
+        }
+
+        private void InitializeAllTicketsFilters()
+        {
+            if (!IsAdmin())
+                return;
+
+            _isInitializingAllTicketsFilters = true;
+            try
+            {
+                var priorities = new List<string> { "Vše" };
+                priorities.AddRange(_repo.GetDistinctPriorities());
+
+                var categories = new List<string> { "Vše" };
+                categories.AddRange(_repo.GetDistinctCategories());
+
+                var creators = new List<CreatorFilterOption>
+                {
+                    new CreatorFilterOption { UserId = null, Label = "Všichni uživatelé" }
+                };
+
+                creators.AddRange(_users
+                    .OrderBy(u => u.Jmeno)
+                    .Select(u => new CreatorFilterOption
+                    {
+                        UserId = u.Id,
+                        Label = $"{u.Jmeno} ({u.Role})"
+                    }));
+
+                AllPriorityFilter.ItemsSource = priorities;
+                AllCategoryFilter.ItemsSource = categories;
+                AllCreatorFilter.ItemsSource = creators;
+
+                AllPriorityFilter.SelectedIndex = 0;
+                AllCategoryFilter.SelectedIndex = 0;
+                AllCreatorFilter.SelectedIndex = 0;
+            }
+            finally
+            {
+                _isInitializingAllTicketsFilters = false;
+            }
+        }
+
+        private void ReloadAllTicketsFromDb()
+        {
+            if (!IsAdmin())
+                return;
+
+            var priorita = AllPriorityFilter.SelectedItem as string;
+            if (string.Equals(priorita, "Vše", StringComparison.Ordinal))
+                priorita = null;
+
+            var kategorie = AllCategoryFilter.SelectedItem as string;
+            if (string.Equals(kategorie, "Vše", StringComparison.Ordinal))
+                kategorie = null;
+
+            var creator = AllCreatorFilter.SelectedItem as CreatorFilterOption;
+            var creatorId = creator?.UserId;
+
+            _allTicketsBacking = _repo.GetFiltered(priorita, kategorie, creatorId);
+
+            AllTicketsList.ItemsSource = _allTicketsBacking
+                .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Priorita} | {t.Kategorie} | {t.Vytvoreno:g}")
+                .ToList();
+        }
+
+        private void AllTicketsFilter_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (!IsAdmin() || _isInitializingAllTicketsFilters)
+                return;
+
+            ReloadAllTicketsFromDb();
+        }
+
+        private void ClearAllTicketsFilters_Click(object? sender, RoutedEventArgs e)
+        {
+            if (!IsAdmin())
+                return;
+
+            AllPriorityFilter.SelectedIndex = 0;
+            AllCategoryFilter.SelectedIndex = 0;
+            AllCreatorFilter.SelectedIndex = 0;
+
+            ReloadAllTicketsFromDb();
         }
     }
 }
