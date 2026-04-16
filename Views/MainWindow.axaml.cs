@@ -99,13 +99,13 @@ namespace TicketSystem
                     .ToList();
             }
 
-            if (AllTicketsList != null)
+            /*if (AllTicketsList != null)
             {
                 AllTicketsList.ItemsSource = Tickets
                     .OrderByDescending(t => t.Vytvoreno)
                     .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Vytvoreno:g}")
                     .ToList();
-            }
+            }*/
         }
 
         private void RefreshDashboard()
@@ -183,6 +183,7 @@ namespace TicketSystem
             LoadTickets();
             RefreshDashboard();
             BuildChart();
+            ReloadAllTicketsFromDb();
         }
 
         private async void RecentTicketsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -252,7 +253,7 @@ namespace TicketSystem
             _repo.Insert(ticket);
 
             ClearNewTicketForm_Click(null, new RoutedEventArgs());
-            LoadTickets();
+            ReloadAllTicketsFromDb();
             RefreshDashboard();
             BuildChart();
 

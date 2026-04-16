@@ -57,7 +57,6 @@
       <!-- DASHBOARD -->
       <StackPanel x:Name="DashboardView" Spacing="12">
         <TextBlock Text="Dashboard" FontSize="34" FontWeight="Bold"/>
-        <TextBlock Text="Přehled systému ticketů" Opacity="0.72"/>
 
         <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10" Margin="0,8,0,0">
           <Border Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="12" Padding="14">
@@ -176,7 +175,7 @@
             <ComboBox x:Name="AllPriorityFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
             <ComboBox Grid.Column="1" x:Name="AllCategoryFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
             <ComboBox Grid.Column="2" x:Name="AllCreatorFilter" SelectionChanged="AllTicketsFilter_SelectionChanged"/>
-            <Button Grid.Column="3" Content="Vyčistit" Click="ClearAllTicketsFilters_Click"/>
+            <Button Grid.Column="3" Content="Vyčistit filtry" Click="ClearAllTicketsFilters_Click"/>
           </Grid>
 
           <ListBox Grid.Row="2"
