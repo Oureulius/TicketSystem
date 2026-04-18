@@ -121,6 +121,11 @@
         <StackPanel Spacing="12">
           <TextBlock Text="Vytvořit nový ticket" FontSize="32" FontWeight="Bold"/>
           <TextBlock Text="Vyplň informace a odešli požadavek." Opacity="0.72"/>
+          <TextBlock x:Name="NewTicketErrorText"
+           Foreground="#C62828"
+           Text=""
+           TextWrapping="Wrap"
+           MinHeight="22"/>
 
           <TextBlock Text="Nadpis"/>
           <TextBox x:Name="NadpisInput"/>

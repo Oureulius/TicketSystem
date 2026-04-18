@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         Title="Detail ticketu">
 
-  <Grid Margin="18" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="10">
+  <Grid Margin="18" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto,Auto" RowSpacing="10">
     <TextBlock Grid.Row="0" x:Name="TitleText" FontSize="28" FontWeight="Bold"/>
 
     <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -52,7 +52,14 @@
              TextWrapping="Wrap"
              MinHeight="90"/>
 
-    <StackPanel Grid.Row="8"
+    <TextBlock Grid.Row="8"
+               x:Name="OperationErrorText"
+               Foreground="#C62828"
+               Text=""
+               TextWrapping="Wrap"
+               MinHeight="22"/>
+
+    <StackPanel Grid.Row="9"
                 Orientation="Horizontal"
                 HorizontalAlignment="Right"
                 Spacing="8"

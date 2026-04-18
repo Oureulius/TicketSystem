@@ -35,7 +35,8 @@ namespace TicketSystem.Data
                     Email      TEXT NOT NULL UNIQUE,
                     Role       TEXT NOT NULL DEFAULT 'User',
                     Login      TEXT,
-                    HesloHash  TEXT
+                    HesloHash  TEXT,
+                    HesloSalt  TEXT
                 );", conn, tx))
             {
                 usersCmd.ExecuteNonQuery();
@@ -87,6 +88,25 @@ namespace TicketSystem.Data
             return Convert.ToHexString(bytes);
         }
 
+        public static string GenerateSalt(int size = 16)
+        {
+            var salt = RandomNumberGenerator.GetBytes(size);
+            return Convert.ToHexString(salt);
+        }
+
+        public static string HashPassword(string password, string saltHex)
+        {
+            var saltBytes = Convert.FromHexString(saltHex);
+            var passwordBytes = Encoding.UTF8.GetBytes(password);
+
+            var data = new byte[saltBytes.Length + passwordBytes.Length];
+            Buffer.BlockCopy(saltBytes, 0, data, 0, saltBytes.Length);
+            Buffer.BlockCopy(passwordBytes, 0, data, saltBytes.Length, passwordBytes.Length);
+
+            var hash = SHA256.HashData(data);
+            return Convert.ToHexString(hash);
+        }
+
         private static void EnsureUserAuthColumns(SQLiteConnection conn, SQLiteTransaction tx)
         {
             var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -113,23 +133,18 @@ namespace TicketSystem.Data
                 using var addPassCmd = new SQLiteCommand("ALTER TABLE Users ADD COLUMN HesloHash TEXT;", conn, tx);
                 addPassCmd.ExecuteNonQuery();
             }
+
+            if (!columns.Contains("HesloSalt"))
+            {
+                using var addSaltCmd = new SQLiteCommand("ALTER TABLE Users ADD COLUMN HesloSalt TEXT;", conn, tx);
+                addSaltCmd.ExecuteNonQuery();
+            }
         }
 
         private static void SeedDefaultUsers(SQLiteConnection conn, SQLiteTransaction tx)
         {
-            UpsertUser(conn, tx,
-                jmeno: "Admin",
-                email: "admin@tickets.local",
-                role: "Admin",
-                login: "admin",
-                hesloHash: HashPassword("admin123"));
-
-            UpsertUser(conn, tx,
-                jmeno: "User",
-                email: "user@tickets.local",
-                role: "User",
-                login: "user",
-                hesloHash: HashPassword("user123"));
+            UpsertUser(conn, tx, "Admin", "admin@tickets.local", "Admin", "admin", "admin123", forceResetPassword: false);
+            UpsertUser(conn, tx, "User", "user@tickets.local", "User", "user", "user123", forceResetPassword: false);
         }
 
         private static void UpsertUser(
@@ -139,35 +154,51 @@ namespace TicketSystem.Data
             string email,
             string role,
             string login,
-            string hesloHash)
+            string heslo,
+            bool forceResetPassword = false)
         {
-            using (var insertCmd = new SQLiteCommand(@"
-                INSERT INTO Users (Jmeno, Email, Role, Login, HesloHash)
-                SELECT @jmeno, @email, @role, @login, @hesloHash
-                WHERE NOT EXISTS (SELECT 1 FROM Users WHERE Email = @email);", conn, tx))
-            {
-                insertCmd.Parameters.AddWithValue("@jmeno", jmeno);
-                insertCmd.Parameters.AddWithValue("@email", email);
-                insertCmd.Parameters.AddWithValue("@role", role);
-                insertCmd.Parameters.AddWithValue("@login", login);
-                insertCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
-                insertCmd.ExecuteNonQuery();
-            }
+            var salt = GenerateSalt();
+            var hesloHash = HashPassword(heslo, salt);
 
-            using (var updateCmd = new SQLiteCommand(@"
+            using var insertCmd = new SQLiteCommand(@"
+                INSERT INTO Users (Jmeno, Email, Role, Login, HesloHash, HesloSalt)
+                SELECT @jmeno, @email, @role, @login, @hesloHash, @hesloSalt
+                WHERE NOT EXISTS (SELECT 1 FROM Users WHERE Email = @email);", conn, tx);
+
+            insertCmd.Parameters.AddWithValue("@jmeno", jmeno);
+            insertCmd.Parameters.AddWithValue("@email", email);
+            insertCmd.Parameters.AddWithValue("@role", role);
+            insertCmd.Parameters.AddWithValue("@login", login);
+            insertCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
+            insertCmd.Parameters.AddWithValue("@hesloSalt", salt);
+
+            var inserted = insertCmd.ExecuteNonQuery() > 0;
+
+            using var updateProfileCmd = new SQLiteCommand(@"
                 UPDATE Users
                 SET Jmeno = @jmeno,
                     Role = @role,
-                    Login = @login,
-                    HesloHash = @hesloHash
-                WHERE Email = @email;", conn, tx))
+                    Login = @login
+                WHERE Email = @email;", conn, tx);
+
+            updateProfileCmd.Parameters.AddWithValue("@jmeno", jmeno);
+            updateProfileCmd.Parameters.AddWithValue("@email", email);
+            updateProfileCmd.Parameters.AddWithValue("@role", role);
+            updateProfileCmd.Parameters.AddWithValue("@login", login);
+            updateProfileCmd.ExecuteNonQuery();
+
+            if (!inserted && forceResetPassword)
             {
-                updateCmd.Parameters.AddWithValue("@jmeno", jmeno);
-                updateCmd.Parameters.AddWithValue("@email", email);
-                updateCmd.Parameters.AddWithValue("@role", role);
-                updateCmd.Parameters.AddWithValue("@login", login);
-                updateCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
-                updateCmd.ExecuteNonQuery();
+                using var updatePasswordCmd = new SQLiteCommand(@"
+                    UPDATE Users
+                    SET HesloHash = @hesloHash,
+                        HesloSalt = @hesloSalt
+                    WHERE Email = @email;", conn, tx);
+
+                updatePasswordCmd.Parameters.AddWithValue("@email", email);
+                updatePasswordCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
+                updatePasswordCmd.Parameters.AddWithValue("@hesloSalt", salt);
+                updatePasswordCmd.ExecuteNonQuery();
             }
         }
     }

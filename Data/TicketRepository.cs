@@ -4,12 +4,14 @@ using System.Data;
 using System.Data.SQLite;
 using System.Text;
 using TicketSystem.Models;
-using System.Linq;
 
 namespace TicketSystem.Data
 {
     public class TicketRepository
     {
+        private const int MaxTitleLength = 120;
+        private const int MaxDescriptionLength = 2000;
+
         private readonly string _connStr = DatabaseHelper.ConnectionString;
 
         public List<Ticket> GetAll()
@@ -78,6 +80,18 @@ namespace TicketSystem.Data
 
         public void Insert(Ticket t)
         {
+            var nadpis = (t.Nadpis ?? "").Trim();
+            var popisek = (t.Popisek ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(nadpis))
+                throw new ArgumentException("Nadpis ticketu je povinný.");
+
+            if (nadpis.Length > MaxTitleLength)
+                throw new ArgumentException($"Nadpis může mít maximálně {MaxTitleLength} znaků.");
+
+            if (popisek.Length > MaxDescriptionLength)
+                throw new ArgumentException($"Popis může mít maximálně {MaxDescriptionLength} znaků.");
+
             using var conn = new SQLiteConnection(_connStr);
             conn.Open();
 
@@ -90,8 +104,8 @@ namespace TicketSystem.Data
                 VALUES
                     (@nadpis, @popisek, @status, @priorita, @kategorie, @vytvorenoUzivatelem, @pridelenoUzivatelem)", conn);
 
-            cmd.Parameters.AddWithValue("@nadpis", t.Nadpis);
-            cmd.Parameters.AddWithValue("@popisek", t.Popisek ?? "");
+            cmd.Parameters.AddWithValue("@nadpis", nadpis);
+            cmd.Parameters.AddWithValue("@popisek", popisek);
             cmd.Parameters.AddWithValue("@status", t.Status ?? "Otevřený");
             cmd.Parameters.AddWithValue("@priorita", t.Priorita ?? "Střední");
             cmd.Parameters.AddWithValue("@kategorie", t.Kategorie ?? "");
@@ -105,8 +119,10 @@ namespace TicketSystem.Data
             cmd.ExecuteNonQuery();
         }
 
-        public void CloseTicket(int id)
+        public void CloseTicket(int id, string actorRole)
         {
+            EnsureAdminRole(actorRole);
+
             using var conn = new SQLiteConnection(_connStr);
             conn.Open();
 
@@ -120,8 +136,10 @@ namespace TicketSystem.Data
             cmd.ExecuteNonQuery();
         }
 
-        public void Delete(int id)
+        public void Delete(int id, string actorRole)
         {
+            EnsureAdminRole(actorRole);
+
             using var conn = new SQLiteConnection(_connStr);
             conn.Open();
 
@@ -129,6 +147,12 @@ namespace TicketSystem.Data
             cmd.CommandText = "DELETE FROM Tickets WHERE Id = $id";
             cmd.Parameters.AddWithValue("$id", id);
             cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureAdminRole(string actorRole)
+        {
+            if (!string.Equals(actorRole, "Admin", StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Tato operace vyžaduje roli Admin.");
         }
 
         public List<string> GetDistinctPriorities()

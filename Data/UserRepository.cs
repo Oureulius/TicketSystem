@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.SQLite;
+using System;
 using TicketSystem.Models;
 
 namespace TicketSystem.Data
@@ -38,17 +39,28 @@ namespace TicketSystem.Data
             conn.Open();
 
             var cmd = new SQLiteCommand(@"
-                SELECT Id, Jmeno, Email, Role, Login
+                SELECT Id, Jmeno, Email, Role, Login, HesloHash, HesloSalt
                 FROM Users
                 WHERE lower(Login) = lower(@login)
-                  AND HesloHash = @hesloHash
                 LIMIT 1;", conn);
 
             cmd.Parameters.AddWithValue("@login", login.Trim());
-            cmd.Parameters.AddWithValue("@hesloHash", DatabaseHelper.HashPassword(password));
 
             using var r = cmd.ExecuteReader();
             if (!r.Read())
+                return null;
+
+            var storedHash = r["HesloHash"]?.ToString() ?? "";
+            var storedSalt = r["HesloSalt"]?.ToString() ?? "";
+
+            if (string.IsNullOrWhiteSpace(storedHash))
+                return null;
+
+            var computedHash = string.IsNullOrWhiteSpace(storedSalt)
+                ? DatabaseHelper.HashPassword(password)
+                : DatabaseHelper.HashPassword(password, storedSalt);
+
+            if (!string.Equals(storedHash, computedHash, StringComparison.OrdinalIgnoreCase))
                 return null;
 
             return new User

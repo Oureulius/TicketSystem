@@ -13,6 +13,9 @@ namespace TicketSystem
 {
     public partial class MainWindow : Window
     {
+        private const int MaxTitleLength = 120;
+        private const int MaxDescriptionLength = 2000;
+
         private readonly TicketRepository _repo = new();
         private List<Ticket> _recentTicketBacking = new();
         private List<Ticket> _allTicketsBacking = new();
@@ -232,9 +235,28 @@ namespace TicketSystem
 
         private void SaveTicket_Click(object? sender, RoutedEventArgs e)
         {
-            var nadpis = NadpisInput.Text?.Trim() ?? "";
+            NewTicketErrorText.Text = "";
+
+            var nadpis = (NadpisInput.Text ?? "").Trim();
+            var popisek = (PopisekInput.Text ?? "").Trim();
+
             if (string.IsNullOrWhiteSpace(nadpis))
+            {
+                NewTicketErrorText.Text = "Nadpis je povinný.";
                 return;
+            }
+
+            if (nadpis.Length > MaxTitleLength)
+            {
+                NewTicketErrorText.Text = $"Nadpis může mít maximálně {MaxTitleLength} znaků.";
+                return;
+            }
+
+            if (popisek.Length > MaxDescriptionLength)
+            {
+                NewTicketErrorText.Text = $"Popis může mít maximálně {MaxDescriptionLength} znaků.";
+                return;
+            }
 
             var priorita = ((PrioritaInput.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Střední";
             var kategorie = ((Kategorie.SelectedItem as ComboBoxItem)?.Content?.ToString()) ?? "Kancelář";
@@ -242,7 +264,7 @@ namespace TicketSystem
             var ticket = new Ticket
             {
                 Nadpis = nadpis,
-                Popisek = PopisekInput.Text ?? "",
+                Popisek = popisek,
                 Status = "Otevřený",
                 Priorita = priorita,
                 Kategorie = kategorie,
@@ -250,9 +272,18 @@ namespace TicketSystem
                 PridelenoUzivatelem = null
             };
 
-            _repo.Insert(ticket);
+            try
+            {
+                _repo.Insert(ticket);
+            }
+            catch (ArgumentException ex)
+            {
+                NewTicketErrorText.Text = ex.Message;
+                return;
+            }
 
             ClearNewTicketForm_Click(null, new RoutedEventArgs());
+            LoadTickets();
             ReloadAllTicketsFromDb();
             RefreshDashboard();
             BuildChart();
@@ -267,6 +298,7 @@ namespace TicketSystem
             NadpisInput.Text = "";
             PopisekInput.Text = "";
             PrioritaInput.SelectedIndex = 1;
+            NewTicketErrorText.Text = "";
         }
 
         private void CurrentUserCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)

@@ -9,12 +9,18 @@ namespace TicketSystem
 {
     public partial class TicketDetailWindow : Window
     {
+        private const int MaxCommentLength = 1000;
+
         private readonly TicketRepository _ticketRepo = new();
         private readonly TicketCommentRepository _commentRepo = new();
         private readonly Ticket _ticket;
         private readonly UserRepository _userRepo = new();
 
         public bool Changed { get; private set; }
+
+        public TicketDetailWindow() : this(new Ticket())
+        {
+        }
 
         public TicketDetailWindow(Ticket ticket)
         {
@@ -42,18 +48,36 @@ namespace TicketSystem
         private void LoadComments()
         {
             var comments = _commentRepo.GetByTicketId(_ticket.Id);
-
-            CommentsList.ItemsSource = comments.Select(c =>
-                $"{c.Vytvoreno:g} | {c.AutorJmeno}: {c.Text}").ToList();
+            CommentsList.ItemsSource = comments.Select(c => $"{c.Vytvoreno:g} | {c.AutorJmeno}: {c.Text}").ToList();
         }
 
         private void AddCommentButton_Click(object? sender, RoutedEventArgs e)
         {
-            var text = NewCommentTextBox.Text?.Trim() ?? "";
-            if (string.IsNullOrWhiteSpace(text))
-                return;
+            OperationErrorText.Text = "";
 
-            _commentRepo.Add(_ticket.Id, MainWindow.CurrentUserId, text);
+            var text = (NewCommentTextBox.Text ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                OperationErrorText.Text = "Komentář nesmí být prázdný.";
+                return;
+            }
+
+            if (text.Length > MaxCommentLength)
+            {
+                OperationErrorText.Text = $"Komentář může mít maximálně {MaxCommentLength} znaků.";
+                return;
+            }
+
+            try
+            {
+                _commentRepo.Add(_ticket.Id, MainWindow.CurrentUserId, text);
+            }
+            catch (ArgumentException ex)
+            {
+                OperationErrorText.Text = ex.Message;
+                return;
+            }
+
             NewCommentTextBox.Text = "";
             LoadComments();
             Changed = true;
@@ -61,22 +85,36 @@ namespace TicketSystem
 
         private void CloseTicketButton_Click(object? sender, RoutedEventArgs e)
         {
-            var isAdmin = string.Equals(MainWindow.CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
-            if (!isAdmin)
-                return;
+            OperationErrorText.Text = "";
 
-            _ticketRepo.CloseTicket(_ticket.Id);
+            try
+            {
+                _ticketRepo.CloseTicket(_ticket.Id, MainWindow.CurrentUserRole);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                OperationErrorText.Text = ex.Message;
+                return;
+            }
+
             Changed = true;
             Close();
         }
 
-        private async void DeleteTicket_Click(object? sender, RoutedEventArgs e)
+        private void DeleteTicket_Click(object? sender, RoutedEventArgs e)
         {
-            var isAdmin = string.Equals(MainWindow.CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
-            if (!isAdmin) 
-                return;
+            OperationErrorText.Text = "";
 
-            _ticketRepo.Delete(_ticket.Id);
+            try
+            {
+                _ticketRepo.Delete(_ticket.Id, MainWindow.CurrentUserRole);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                OperationErrorText.Text = ex.Message;
+                return;
+            }
+
             Changed = true;
             Close();
         }

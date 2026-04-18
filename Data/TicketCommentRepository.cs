@@ -7,6 +7,7 @@ namespace TicketSystem.Data
 {
     public class TicketCommentRepository
     {
+        private const int MaxCommentLength = 1000;
         private readonly string _connStr = DatabaseHelper.ConnectionString;
 
         public List<TicketComment> GetByTicketId(int ticketId)
@@ -43,6 +44,14 @@ namespace TicketSystem.Data
 
         public void Add(int ticketId, int userId, string text)
         {
+            var normalized = (text ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(normalized))
+                throw new ArgumentException("Komentář nesmí být prázdný.");
+
+            if (normalized.Length > MaxCommentLength)
+                throw new ArgumentException($"Komentář může mít maximálně {MaxCommentLength} znaků.");
+
             using var conn = new SQLiteConnection(_connStr);
             conn.Open();
 
@@ -52,7 +61,7 @@ namespace TicketSystem.Data
 
             cmd.Parameters.AddWithValue("@ticketId", ticketId);
             cmd.Parameters.AddWithValue("@userId", userId);
-            cmd.Parameters.AddWithValue("@text", text);
+            cmd.Parameters.AddWithValue("@text", normalized);
             cmd.ExecuteNonQuery();
         }
     }
