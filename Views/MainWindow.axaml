@@ -48,6 +48,14 @@
                 CornerRadius="10"
                 Margin="0,8,0,0"
                 Click="RefreshData_Click"/>
+
+        <Button Grid.Row="5"
+                Content="Statistika"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Margin="0,8,0,0"
+                Click="OpenStatistics_Click"/>
       </Grid>
     </Border>
 
@@ -186,6 +194,72 @@
           <ListBox Grid.Row="2"
                    x:Name="AllTicketsList"
                    SelectionChanged="AllTicketsList_SelectionChanged"/>
+        </Grid>
+      </Border>
+
+      <!-- STATISTIKA -->
+      <Border x:Name="StatisticsView"
+              IsVisible="False"
+              Background="#FFFFFF"
+              BorderBrush="#E5EAF1"
+              BorderThickness="1"
+              CornerRadius="12"
+              Padding="14">
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="10">
+          <TextBlock Text="Statistika ticketů" FontSize="26" FontWeight="Bold"/>
+
+          <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+            <Border Background="#F8FBFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <StackPanel>
+                <TextBlock Text="Poslední 1 den" Opacity="0.75"/>
+                <TextBlock x:Name="StatsLast1DayText" Text="0" FontSize="26" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="#F8FBFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <StackPanel>
+                <TextBlock Text="Posledních 14 dní" Opacity="0.75"/>
+                <TextBlock x:Name="StatsLast14DaysText" Text="0" FontSize="26" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="#F8FBFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <StackPanel>
+                <TextBlock Text="Posledních 30 dní" Opacity="0.75"/>
+                <TextBlock x:Name="StatsLast30DaysText" Text="0" FontSize="26" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Background="#F8FBFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <StackPanel>
+                <TextBlock Text="Posledních 365 dní" Opacity="0.75"/>
+                <TextBlock x:Name="StatsLast365DaysText" Text="0" FontSize="26" FontWeight="Bold"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="2" ColumnDefinitions="Auto,120,*" ColumnSpacing="10">
+            <TextBlock Text="Časová osa:" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            <ComboBox Grid.Column="1" x:Name="StatisticsTimelineRangeCombo" SelectedIndex="2">
+              <ComboBoxItem Content="1"/>
+              <ComboBoxItem Content="14"/>
+              <ComboBoxItem Content="30"/>
+              <ComboBoxItem Content="365"/>
+            </ComboBox>
+          </Grid>
+
+          <Grid Grid.Row="3" ColumnDefinitions="1.2*,1*" ColumnSpacing="10">
+            <Border Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <StackPanel>
+                <TextBlock Text="Počet ticketů v čase" FontSize="20" FontWeight="SemiBold"/>
+                <lvc:CartesianChart x:Name="StatisticsTimelineChart" Height="430" Margin="0,8,0,0"/>
+              </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#E5EAF1" BorderThickness="1" CornerRadius="10" Padding="12">
+              <Grid RowDefinitions="Auto,*" RowSpacing="8">
+                <TextBlock Text="Nejčastější problémy (podle kategorie)" FontSize="20" FontWeight="SemiBold"/>
+                <ListBox Grid.Row="1" x:Name="TopProblemsList" SelectionChanged="TopProblemsList_SelectionChanged"/>
+              </Grid>
+            </Border>
+          </Grid>
         </Grid>
       </Border>
     </Grid>

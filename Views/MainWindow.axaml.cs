@@ -33,6 +33,9 @@ namespace TicketSystem
         public MainWindow()
         {
             InitializeComponent();
+
+            if (StatisticsTimelineRangeCombo != null)
+                StatisticsTimelineRangeCombo.SelectionChanged += StatisticsTimelineRangeCombo_SelectionChanged;
         }
 
         public void InitializeForUser(User user)
@@ -156,6 +159,7 @@ namespace TicketSystem
             DashboardView.IsVisible = true;
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = false;
+            StatisticsView.IsVisible = false;
         }
 
         private void OpenNewTicket_Click(object? sender, RoutedEventArgs e)
@@ -163,6 +167,7 @@ namespace TicketSystem
             DashboardView.IsVisible = false;
             NewTicketView.IsVisible = true;
             AllTicketsView.IsVisible = false;
+            StatisticsView.IsVisible = false;
         }
 
         private void OpenAllTickets_Click(object? sender, RoutedEventArgs e)
@@ -176,9 +181,20 @@ namespace TicketSystem
             DashboardView.IsVisible = false;
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = true;
+            StatisticsView.IsVisible = false;
 
             InitializeAllTicketsFilters();
             ReloadAllTicketsFromDb();
+        }
+
+        private void OpenStatistics_Click(object? sender, RoutedEventArgs e)
+        {
+            DashboardView.IsVisible = false;
+            NewTicketView.IsVisible = false;
+            AllTicketsView.IsVisible = false;
+            StatisticsView.IsVisible = true;
+
+            RefreshStatistics();
         }
 
         private void RefreshData_Click(object? sender, RoutedEventArgs e)
@@ -186,6 +202,7 @@ namespace TicketSystem
             LoadTickets();
             RefreshDashboard();
             BuildChart();
+            RefreshStatistics();
             ReloadAllTicketsFromDb();
         }
 
@@ -206,6 +223,7 @@ namespace TicketSystem
                 LoadTickets();
                 RefreshDashboard();
                 BuildChart();
+                RefreshStatistics();
             }
         }
 
@@ -229,6 +247,7 @@ namespace TicketSystem
                 LoadTickets();
                 RefreshDashboard();
                 BuildChart();
+                RefreshStatistics();
                 ReloadAllTicketsFromDb();
             }
         }
@@ -287,10 +306,12 @@ namespace TicketSystem
             ReloadAllTicketsFromDb();
             RefreshDashboard();
             BuildChart();
+            RefreshStatistics();
 
             DashboardView.IsVisible = true;
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = false;
+            StatisticsView.IsVisible = false;
         }
 
         private void ClearNewTicketForm_Click(object? sender, RoutedEventArgs e)
@@ -388,6 +409,95 @@ namespace TicketSystem
             AllCreatorFilter.SelectedIndex = 0;
 
             ReloadAllTicketsFromDb();
+        }
+
+        private void StatisticsTimelineRangeCombo_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            BuildStatisticsTimelineChart();
+        }
+
+        private void RefreshStatistics()
+        {
+            RefreshStatisticsSummary();
+            BuildStatisticsTimelineChart();
+            BuildMostFrequentProblems();
+        }
+
+        private void RefreshStatisticsSummary()
+        {
+            var now = DateTime.Now;
+
+            StatsLast1DayText.Text = Tickets.Count(t => t.Vytvoreno >= now.AddDays(-1)).ToString();
+            StatsLast14DaysText.Text = Tickets.Count(t => t.Vytvoreno >= now.AddDays(-14)).ToString();
+            StatsLast30DaysText.Text = Tickets.Count(t => t.Vytvoreno >= now.AddDays(-30)).ToString();
+            StatsLast365DaysText.Text = Tickets.Count(t => t.Vytvoreno >= now.AddDays(-365)).ToString();
+        }
+
+        private void BuildStatisticsTimelineChart()
+        {
+            if (StatisticsTimelineChart is null)
+                return;
+
+            var daysCount = GetSelectedTimelineRangeDays();
+            var startDay = DateTime.Today.AddDays(-(daysCount - 1));
+
+            var days = Enumerable.Range(0, daysCount)
+                .Select(i => startDay.AddDays(i))
+                .ToList();
+
+            var counts = days
+                .Select(day => (double)Tickets.Count(t => t.Vytvoreno.Date == day.Date))
+                .ToArray();
+
+            StatisticsTimelineChart.Series = new ISeries[]
+            {
+                new ColumnSeries<double> { Values = counts }
+            };
+
+            StatisticsTimelineChart.XAxes = new Axis[]
+            {
+                new Axis
+                {
+                    Labels = days.Select(d => d.ToString("dd.MM")).ToArray(),
+                    LabelsRotation = daysCount > 30 ? 45 : 0
+                }
+            };
+
+            StatisticsTimelineChart.YAxes = new Axis[]
+            {
+                new Axis { MinLimit = 0 }
+            };
+        }
+
+        private int GetSelectedTimelineRangeDays()
+        {
+            var selected = (StatisticsTimelineRangeCombo?.SelectedItem as ComboBoxItem)?.Content?.ToString();
+            if (int.TryParse(selected, out var days) && days > 0)
+                return days;
+
+            return 30;
+        }
+
+        private void BuildMostFrequentProblems()
+        {
+            var topProblems = Tickets
+                .GroupBy(t => string.IsNullOrWhiteSpace(t.Kategorie) ? "Nezařazené" : t.Kategorie.Trim())
+                .OrderByDescending(g => g.Count())
+                .ThenBy(g => g.Key)
+                .Take(10)
+                .Select(g => $"{g.Key} - {g.Count()}x")
+                .ToList();
+
+            if (topProblems.Count == 0)
+                topProblems.Add("Bez dat");
+
+            TopProblemsList.ItemsSource = topProblems;
+        }
+
+        private void TopProblemsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ListBox listBox)
+                listBox.SelectedIndex = -1;
         }
     }
 }
