@@ -50,12 +50,20 @@
                 Click="RefreshData_Click"/>
 
         <Button Grid.Row="5"
+                x:Name="StatisticsButton"
                 Content="Statistika"
                 HorizontalContentAlignment="Left"
                 Padding="14,12"
                 CornerRadius="10"
                 Margin="0,8,0,0"
                 Click="OpenStatistics_Click"/>
+
+        <Button Grid.Row="7"
+                Content="Odhlásit"
+                HorizontalContentAlignment="Left"
+                Padding="14,12"
+                CornerRadius="10"
+                Click="Logout_Click"/>
       </Grid>
     </Border>
 

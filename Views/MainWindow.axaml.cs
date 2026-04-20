@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using LiveChartsCore;
@@ -67,7 +69,16 @@ namespace TicketSystem
         private void ApplyRolePermissions()
         {
             var isAdmin = string.Equals(CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
-            AllTicketsButton.IsVisible = isAdmin;
+
+            AllTicketsButton.IsVisible = true;
+            StatisticsButton.IsVisible = isAdmin;
+
+            if (!isAdmin)
+                StatisticsView.IsVisible = false;
+
+            AllPriorityFilter.IsEnabled = isAdmin;
+            AllCategoryFilter.IsEnabled = isAdmin;
+            AllCreatorFilter.IsEnabled = isAdmin;
         }
 
         private bool IsAdmin()
@@ -172,23 +183,25 @@ namespace TicketSystem
 
         private void OpenAllTickets_Click(object? sender, RoutedEventArgs e)
         {
-            if (!IsAdmin())
-            {
-                CurrentUserInfoText.Text = "Přístup zamítnut: seznam všech ticketů je jen pro roli Admin.";
-                return;
-            }
-
             DashboardView.IsVisible = false;
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = true;
             StatisticsView.IsVisible = false;
 
-            InitializeAllTicketsFilters();
+            if (IsAdmin())
+                InitializeAllTicketsFilters();
+
             ReloadAllTicketsFromDb();
         }
 
         private void OpenStatistics_Click(object? sender, RoutedEventArgs e)
         {
+            if (!IsAdmin())
+            {
+                CurrentUserInfoText.Text = "Přístup zamítnut: statistika je jen pro roli Admin.";
+                return;
+            }
+
             DashboardView.IsVisible = false;
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = false;
@@ -229,9 +242,6 @@ namespace TicketSystem
 
         private async void AllTicketsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (!IsAdmin())
-                return;
-
             var selectedIndex = AllTicketsList.SelectedIndex;
             if (selectedIndex < 0 || selectedIndex >= _allTicketsBacking.Count)
                 return;
@@ -370,21 +380,27 @@ namespace TicketSystem
 
         private void ReloadAllTicketsFromDb()
         {
-            if (!IsAdmin())
-                return;
+            if (IsAdmin())
+            {
+                var priorita = AllPriorityFilter.SelectedItem as string;
+                if (string.Equals(priorita, "Vše", StringComparison.Ordinal))
+                    priorita = null;
 
-            var priorita = AllPriorityFilter.SelectedItem as string;
-            if (string.Equals(priorita, "Vše", StringComparison.Ordinal))
-                priorita = null;
+                var kategorie = AllCategoryFilter.SelectedItem as string;
+                if (string.Equals(kategorie, "Vše", StringComparison.Ordinal))
+                    kategorie = null;
 
-            var kategorie = AllCategoryFilter.SelectedItem as string;
-            if (string.Equals(kategorie, "Vše", StringComparison.Ordinal))
-                kategorie = null;
+                var creator = AllCreatorFilter.SelectedItem as CreatorFilterOption;
+                var creatorId = creator?.UserId;
 
-            var creator = AllCreatorFilter.SelectedItem as CreatorFilterOption;
-            var creatorId = creator?.UserId;
-
-            _allTicketsBacking = _repo.GetFiltered(priorita, kategorie, creatorId);
+                _allTicketsBacking = _repo.GetFiltered(priorita, kategorie, creatorId);
+            }
+            else
+            {
+                _allTicketsBacking = GetVisibleTickets(_repo.GetAll())
+                    .OrderByDescending(t => t.Vytvoreno)
+                    .ToList();
+            }
 
             AllTicketsList.ItemsSource = _allTicketsBacking
                 .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Priorita} | {t.Kategorie} | {t.Vytvoreno:g}")
@@ -498,6 +514,40 @@ namespace TicketSystem
         {
             if (sender is ListBox listBox)
                 listBox.SelectedIndex = -1;
+        }
+
+        private void Logout_Click(object? sender, RoutedEventArgs e)
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                Close();
+                return;
+            }
+
+            desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            var loginWindow = new LoginWindow();
+            desktop.MainWindow = loginWindow;
+
+            loginWindow.Closed += (_, _) =>
+            {
+                var user = loginWindow.AuthenticatedUser;
+                if (user is null)
+                {
+                    desktop.Shutdown();
+                    return;
+                }
+
+                var mainWindow = new MainWindow();
+                mainWindow.InitializeForUser(user);
+
+                desktop.MainWindow = mainWindow;
+                desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+                mainWindow.Show();
+            };
+
+            Close();
+            loginWindow.Show();
         }
     }
 }
