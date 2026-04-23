@@ -66,7 +66,7 @@ namespace TicketSystem.Data
                     Status = reader["Status"]?.ToString() ?? "Otevřený",
                     Priorita = reader["Priorita"]?.ToString() ?? "Střední",
                     Kategorie = reader["Kategorie"]?.ToString() ?? "",
-                    Vytvoreno = DateTime.TryParse(reader["Vytvoreno"]?.ToString(), out var dt) ? dt : DateTime.Now,
+                    Vytvoreno = DateTime.TryParse(reader["Vytvoreno"]?.ToString(), out var dt) ? dt : DateTime.UtcNow,
                     ZmenaCasu = DateTime.TryParse(reader["ZmenaCasu"]?.ToString(), out var zt) ? zt : null,
                     VytvorenoUzivatelem = Convert.ToInt32(reader["VytvorenoUzivatelem"]),
                     PridelenoUzivatelem = reader["PridelenoUzivatelem"] == DBNull.Value

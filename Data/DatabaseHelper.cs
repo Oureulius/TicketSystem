@@ -52,7 +52,7 @@ namespace TicketSystem.Data
                     Status           TEXT NOT NULL DEFAULT 'Otevřený',
                     Priorita         TEXT NOT NULL DEFAULT 'Střední',
                     Kategorie        TEXT,
-                    Vytvoreno        TEXT NOT NULL DEFAULT (datetime('now')),
+                    Vytvoreno        TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
                     ZmenaCasu        TEXT,
                     VytvorenoUzivatelem  INTEGER NOT NULL,
                     PridelenoUzivatelem INTEGER,

@@ -11,60 +11,64 @@
 
     <!-- LEVÉ MENU -->
     <Border Background="#EAF3FF" BorderBrush="#D3E4FF" BorderThickness="0,0,1,0">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" Margin="14">
-        <TextBlock Text="Ticket System"
-                   FontSize="28"
-                   FontWeight="Bold"
-                   Margin="4,4,4,16"/>
+		<Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" Margin="14">
 
-        <Button Grid.Row="1"
-                Content="Dashboard"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Click="OpenDashboard_Click"/>
+			<TextBlock Text="Ticket System"
+					   FontSize="28"
+					   FontWeight="Bold"
+					   Margin="4,4,4,16"/>
 
-        <Button Grid.Row="2"
-                Content="Vytvořit nový ticket"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Margin="0,8,0,0"
-                Click="OpenNewTicket_Click"/>
+			<Button Grid.Row="1"
+					Content="Dashboard"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Click="OpenDashboard_Click"/>
 
-        <Button Grid.Row="3"
-                x:Name="AllTicketsButton"
-                Content="Všechny tickety"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Margin="0,8,0,0"
-                Click="OpenAllTickets_Click"/>
+			<Button Grid.Row="2"
+					Content="Vytvořit nový ticket"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Margin="0,8,0,0"
+					Click="OpenNewTicket_Click"/>
 
-        <Button Grid.Row="4"
-                Content="Obnovit data"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Margin="0,8,0,0"
-                Click="RefreshData_Click"/>
+			<Button Grid.Row="3"
+					x:Name="AllTicketsButton"
+					Content="Všechny tickety"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Margin="0,8,0,0"
+					Click="OpenAllTickets_Click"/>
 
-        <Button Grid.Row="5"
-                x:Name="StatisticsButton"
-                Content="Statistika"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Margin="0,8,0,0"
-                Click="OpenStatistics_Click"/>
+			<Button Grid.Row="4"
+					x:Name="StatisticsButton"
+					Content="Statistika"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Margin="0,8,0,0"
+					Click="OpenStatistics_Click"/>
 
-        <Button Grid.Row="7"
-                Content="Odhlásit"
-                HorizontalContentAlignment="Left"
-                Padding="14,12"
-                CornerRadius="10"
-                Click="Logout_Click"/>
-      </Grid>
+			<!-- prázdný prostor -->
+
+			<Button Grid.Row="6"
+					Content="Odhlásit"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Click="Logout_Click"/>
+
+			<Button Grid.Row="7"
+					Content="Obnovit data"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Margin="0,8,0,0"
+					Click="RefreshData_Click"/>
+
+		</Grid>
     </Border>
 
     <!-- PRAVÁ STRANA -->
