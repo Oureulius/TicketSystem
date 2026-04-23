@@ -72,9 +72,13 @@ namespace TicketSystem
 
             AllTicketsButton.IsVisible = true;
             StatisticsButton.IsVisible = isAdmin;
+            AddUserButton.IsVisible = isAdmin;
 
             if (!isAdmin)
+            {
                 StatisticsView.IsVisible = false;
+                AddUserView.IsVisible = false;
+            }
 
             AllPriorityFilter.IsEnabled = isAdmin;
             AllCategoryFilter.IsEnabled = isAdmin;
@@ -171,6 +175,7 @@ namespace TicketSystem
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = false;
             StatisticsView.IsVisible = false;
+            AddUserView.IsVisible = false;
         }
 
         private void OpenNewTicket_Click(object? sender, RoutedEventArgs e)
@@ -179,6 +184,7 @@ namespace TicketSystem
             NewTicketView.IsVisible = true;
             AllTicketsView.IsVisible = false;
             StatisticsView.IsVisible = false;
+            AddUserView.IsVisible = false;
         }
 
         private void OpenAllTickets_Click(object? sender, RoutedEventArgs e)
@@ -187,6 +193,7 @@ namespace TicketSystem
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = true;
             StatisticsView.IsVisible = false;
+            AddUserView.IsVisible = false;
 
             if (IsAdmin())
                 InitializeAllTicketsFilters();
@@ -206,6 +213,7 @@ namespace TicketSystem
             NewTicketView.IsVisible = false;
             AllTicketsView.IsVisible = false;
             StatisticsView.IsVisible = true;
+            AddUserView.IsVisible = false;
 
             RefreshStatistics();
         }
@@ -548,6 +556,65 @@ namespace TicketSystem
 
             Close();
             loginWindow.Show();
+        }
+
+        private void OpenAddUser_Click(object? sender, RoutedEventArgs e)
+        {
+            if (!IsAdmin())
+            {
+                CurrentUserInfoText.Text = "Přístup zamítnut: správu uživatelů má jen Admin.";
+                return;
+            }
+
+            DashboardView.IsVisible = false;
+            NewTicketView.IsVisible = false;
+            AllTicketsView.IsVisible = false;
+            StatisticsView.IsVisible = false;
+            AddUserView.IsVisible = true;
+
+            AddUserErrorText.Text = "";
+        }
+
+        private void ClearNewUserForm_Click(object? sender, RoutedEventArgs e)
+        {
+            NewUserNameInput.Text = "";
+            NewUserPasswordInput.Text = "";
+            NewUserRoleCombo.SelectedIndex = 0;
+            AddUserErrorText.Text = "";
+        }
+
+        private void CreateUser_Click(object? sender, RoutedEventArgs e)
+        {
+            if (!IsAdmin())
+            {
+                AddUserErrorText.Text = "Uživatele může vytvářet jen Admin.";
+                return;
+            }
+
+            AddUserErrorText.Text = "";
+
+            var jmeno = (NewUserNameInput.Text ?? "").Trim();
+            var heslo = NewUserPasswordInput.Text ?? "";
+            var role = (NewUserRoleCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "User";
+
+            try
+            {
+                _userRepo.CreateByAdmin(jmeno, heslo, role);
+
+                _users = _userRepo.GetAll();
+                CurrentUserCombo.ItemsSource = _users;
+
+                var idx = _users.FindIndex(u => u.Id == CurrentUserId);
+                if (idx >= 0)
+                    CurrentUserCombo.SelectedIndex = idx;
+
+                AddUserErrorText.Text = "Uživatel byl úspěšně vytvořen.";
+                ClearNewUserForm_Click(null, new RoutedEventArgs());
+            }
+            catch (ArgumentException ex)
+            {
+                AddUserErrorText.Text = ex.Message;
+            }
         }
     }
 }

@@ -11,7 +11,7 @@
 
     <!-- LEVÉ MENU -->
     <Border Background="#EAF3FF" BorderBrush="#D3E4FF" BorderThickness="0,0,1,0">
-		<Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" Margin="14">
+		<Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto,Auto" Margin="14">
 
 			<TextBlock Text="Ticket System"
 					   FontSize="28"
@@ -51,16 +51,23 @@
 					Margin="0,8,0,0"
 					Click="OpenStatistics_Click"/>
 
-			<!-- prázdný prostor -->
+			<Button Grid.Row="5"
+					x:Name="AddUserButton"
+					Content="Přidat uživatele"
+					HorizontalContentAlignment="Left"
+					Padding="14,12"
+					CornerRadius="10"
+					Margin="0,8,0,0"
+					Click="OpenAddUser_Click"/>
 
-			<Button Grid.Row="6"
+			<Button Grid.Row="7"
 					Content="Odhlásit"
 					HorizontalContentAlignment="Left"
 					Padding="14,12"
 					CornerRadius="10"
 					Click="Logout_Click"/>
 
-			<Button Grid.Row="7"
+			<Button Grid.Row="8"
 					Content="Obnovit data"
 					HorizontalContentAlignment="Left"
 					Padding="14,12"
@@ -274,6 +281,42 @@
           </Grid>
         </Grid>
       </Border>
+
+      <!-- PŘIDAT UŽIVATELE -->
+      <Border x:Name="AddUserView"
+        IsVisible="False"
+        Background="#FFFFFF"
+        BorderBrush="#E5EAF1"
+        BorderThickness="1"
+        CornerRadius="12"
+        Padding="18">
+  <StackPanel Spacing="12">
+    <TextBlock Text="Přidat uživatele" FontSize="32" FontWeight="Bold"/>
+
+    <TextBlock x:Name="AddUserErrorText"
+               Foreground="#C62828"
+               Text=""
+               TextWrapping="Wrap"
+               MinHeight="22"/>
+
+    <TextBlock Text="Jméno"/>
+    <TextBox x:Name="NewUserNameInput"/>
+
+    <TextBlock Text="Heslo"/>
+    <TextBox x:Name="NewUserPasswordInput" PasswordChar="*"/>
+
+    <TextBlock Text="Pozice"/>
+    <ComboBox x:Name="NewUserRoleCombo" SelectedIndex="0">
+      <ComboBoxItem Content="User"/>
+      <ComboBoxItem Content="Admin"/>
+    </ComboBox>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button Content="Vyčistit" Click="ClearNewUserForm_Click"/>
+      <Button Content="Vytvořit" Click="CreateUser_Click"/>
+    </StackPanel>
+  </StackPanel>
+</Border>
     </Grid>
   </Grid>
 </Window>
