@@ -27,7 +27,6 @@ Běžný uživatel vidí pouze své tickety a tickety, které má přidělené.
 ### Vzhled uživatelského dashboardu
 <img width="1320" height="851" alt="image" src="https://github.com/user-attachments/assets/f18fc593-dcfc-422b-9fb8-21c859f0adb7" />
 
-
 ## Admin dashboard
 Administrátor má plný přístup ke všem ticketům i k uživatelům.
 
@@ -50,12 +49,11 @@ Administrátorská sekce obsahuje přehledné statistiky práce s tickety.
 - graf ticketů podle času
 - nejčastější kategorie/problémy
 
-### Vzhled uživatelského dashboardu
+### Vzhled admin dashboardu
 <img width="1320" height="849" alt="image" src="https://github.com/user-attachments/assets/56a723c0-cf7e-4c1e-b2a5-597345650652" />
 
 ### Vzhled admin statistiky
 <img width="1319" height="848" alt="image" src="https://github.com/user-attachments/assets/a11a23d8-354e-4c57-9741-9ec3699c66aa" />
-
 
 ## Správa uživatelů
 Administrátor může:
