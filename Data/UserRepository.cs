@@ -129,6 +129,24 @@ namespace TicketSystem.Data
             }
         }
 
+        public void DeleteByAdmin(int id)
+        {
+            using var conn = new SQLiteConnection(_connStr);
+            conn.Open();
+
+            using var cmd = new SQLiteCommand("DELETE FROM Users WHERE Id = @id;", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+
+            try
+            {
+                cmd.ExecuteNonQuery();
+            }
+            catch (SQLiteException ex)
+            {
+                throw new ArgumentException("Uživatele se nepodařilo smazat: " + ex.Message);
+            }
+        }
+
         private static string BuildLoginBase(string input)
         {
             var text = input.Normalize(NormalizationForm.FormD);

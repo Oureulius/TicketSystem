@@ -31,6 +31,7 @@ namespace TicketSystem
         public static string CurrentUserRole { get; private set; } = "User";
 
         private bool _isInitializingAllTicketsFilters;
+        private bool _isAdmin;
 
         public MainWindow()
         {
@@ -44,14 +45,14 @@ namespace TicketSystem
         {
             ApplyAuthenticatedUser(user);
             LoadTickets();
-            RefreshDashboard();
-            BuildChart();
+            RefreshAll(buildChart: true, refreshStatistics: false, reloadAllTickets: false);
         }
 
         private void ApplyAuthenticatedUser(User user)
         {
             CurrentUserId = user.Id;
             CurrentUserRole = user.Role;
+            _isAdmin = string.Equals(CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
 
             _users = _userRepo.GetAll();
             CurrentUserCombo.ItemsSource = _users;
@@ -68,29 +69,27 @@ namespace TicketSystem
 
         private void ApplyRolePermissions()
         {
-            var isAdmin = string.Equals(CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
-
             AllTicketsButton.IsVisible = true;
-            StatisticsButton.IsVisible = isAdmin;
-            AddUserButton.IsVisible = isAdmin;
+            StatisticsButton.IsVisible = _isAdmin;
+            AddUserButton.IsVisible = _isAdmin;
 
-            if (!isAdmin)
+            if (!_isAdmin)
             {
                 StatisticsView.IsVisible = false;
                 AddUserView.IsVisible = false;
             }
 
-            AllPriorityFilter.IsEnabled = isAdmin;
-            AllCategoryFilter.IsEnabled = isAdmin;
-            AllCreatorFilter.IsEnabled = isAdmin;
+            AllPriorityFilter.IsEnabled = true;
+            AllCategoryFilter.IsEnabled = true;
+            AllCreatorFilter.IsEnabled = _isAdmin;
+            AllCreatorFilter.IsVisible = _isAdmin;
         }
 
-        private bool IsAdmin()
-            => string.Equals(CurrentUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        private bool IsAdmin() => _isAdmin;
 
         private IEnumerable<Ticket> GetVisibleTickets(IEnumerable<Ticket> allTickets)
         {
-            if (IsAdmin())
+            if (_isAdmin)
                 return allTickets;
 
             return allTickets.Where(t =>
@@ -119,14 +118,29 @@ namespace TicketSystem
                     .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Vytvoreno:g}")
                     .ToList();
             }
+        }
 
-            /*if (AllTicketsList != null)
-            {
-                AllTicketsList.ItemsSource = Tickets
-                    .OrderByDescending(t => t.Vytvoreno)
-                    .Select(t => $"#{t.Id} | {t.Nadpis} | {t.Status} | {t.Vytvoreno:g}")
-                    .ToList();
-            }*/
+        private void RefreshAll(bool reloadAllTickets, bool refreshStatistics, bool buildChart)
+        {
+            RefreshDashboard();
+
+            if (buildChart)
+                BuildChart();
+
+            if (refreshStatistics && _isAdmin)
+                RefreshStatistics();
+
+            if (reloadAllTickets)
+                ReloadAllTicketsFromDb();
+        }
+
+        private void ShowView(Control? viewToShow)
+        {
+            DashboardView.IsVisible = viewToShow == DashboardView;
+            NewTicketView.IsVisible = viewToShow == NewTicketView;
+            AllTicketsView.IsVisible = viewToShow == AllTicketsView;
+            StatisticsView.IsVisible = viewToShow == StatisticsView;
+            AddUserView.IsVisible = viewToShow == AddUserView;
         }
 
         private void RefreshDashboard()
@@ -171,60 +185,38 @@ namespace TicketSystem
 
         private void OpenDashboard_Click(object? sender, RoutedEventArgs e)
         {
-            DashboardView.IsVisible = true;
-            NewTicketView.IsVisible = false;
-            AllTicketsView.IsVisible = false;
-            StatisticsView.IsVisible = false;
-            AddUserView.IsVisible = false;
+            ShowView(DashboardView);
         }
 
         private void OpenNewTicket_Click(object? sender, RoutedEventArgs e)
         {
-            DashboardView.IsVisible = false;
-            NewTicketView.IsVisible = true;
-            AllTicketsView.IsVisible = false;
-            StatisticsView.IsVisible = false;
-            AddUserView.IsVisible = false;
+            ShowView(NewTicketView);
         }
 
         private void OpenAllTickets_Click(object? sender, RoutedEventArgs e)
         {
-            DashboardView.IsVisible = false;
-            NewTicketView.IsVisible = false;
-            AllTicketsView.IsVisible = true;
-            StatisticsView.IsVisible = false;
-            AddUserView.IsVisible = false;
+            ShowView(AllTicketsView);
 
-            if (IsAdmin())
-                InitializeAllTicketsFilters();
-
+            InitializeAllTicketsFilters();
             ReloadAllTicketsFromDb();
         }
 
         private void OpenStatistics_Click(object? sender, RoutedEventArgs e)
         {
-            if (!IsAdmin())
+            if (!_isAdmin)
             {
                 CurrentUserInfoText.Text = "Přístup zamítnut: statistika je jen pro roli Admin.";
                 return;
             }
 
-            DashboardView.IsVisible = false;
-            NewTicketView.IsVisible = false;
-            AllTicketsView.IsVisible = false;
-            StatisticsView.IsVisible = true;
-            AddUserView.IsVisible = false;
-
+            ShowView(StatisticsView);
             RefreshStatistics();
         }
 
         private void RefreshData_Click(object? sender, RoutedEventArgs e)
         {
             LoadTickets();
-            RefreshDashboard();
-            BuildChart();
-            RefreshStatistics();
-            ReloadAllTicketsFromDb();
+            RefreshAll(reloadAllTickets: true, refreshStatistics: true, buildChart: true);
         }
 
         private async void RecentTicketsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -242,9 +234,7 @@ namespace TicketSystem
             if (detailWindow.Changed)
             {
                 LoadTickets();
-                RefreshDashboard();
-                BuildChart();
-                RefreshStatistics();
+                RefreshAll(reloadAllTickets: false, refreshStatistics: true, buildChart: true);
             }
         }
 
@@ -263,10 +253,7 @@ namespace TicketSystem
             if (detailWindow.Changed)
             {
                 LoadTickets();
-                RefreshDashboard();
-                BuildChart();
-                RefreshStatistics();
-                ReloadAllTicketsFromDb();
+                RefreshAll(reloadAllTickets: true, refreshStatistics: true, buildChart: true);
             }
         }
 
@@ -321,15 +308,9 @@ namespace TicketSystem
 
             ClearNewTicketForm_Click(null, new RoutedEventArgs());
             LoadTickets();
-            ReloadAllTicketsFromDb();
-            RefreshDashboard();
-            BuildChart();
-            RefreshStatistics();
+            RefreshAll(reloadAllTickets: true, refreshStatistics: true, buildChart: true);
 
-            DashboardView.IsVisible = true;
-            NewTicketView.IsVisible = false;
-            AllTicketsView.IsVisible = false;
-            StatisticsView.IsVisible = false;
+            ShowView(DashboardView);
         }
 
         private void ClearNewTicketForm_Click(object? sender, RoutedEventArgs e)
@@ -347,9 +328,6 @@ namespace TicketSystem
 
         private void InitializeAllTicketsFilters()
         {
-            if (!IsAdmin())
-                return;
-
             _isInitializingAllTicketsFilters = true;
             try
             {
@@ -359,26 +337,30 @@ namespace TicketSystem
                 var categories = new List<string> { "Vše" };
                 categories.AddRange(_repo.GetDistinctCategories());
 
-                var creators = new List<CreatorFilterOption>
-                {
-                    new CreatorFilterOption { UserId = null, Label = "Všichni uživatelé" }
-                };
-
-                creators.AddRange(_users
-                    .OrderBy(u => u.Jmeno)
-                    .Select(u => new CreatorFilterOption
-                    {
-                        UserId = u.Id,
-                        Label = $"{u.Jmeno} ({u.Role})"
-                    }));
-
                 AllPriorityFilter.ItemsSource = priorities;
                 AllCategoryFilter.ItemsSource = categories;
-                AllCreatorFilter.ItemsSource = creators;
 
                 AllPriorityFilter.SelectedIndex = 0;
                 AllCategoryFilter.SelectedIndex = 0;
-                AllCreatorFilter.SelectedIndex = 0;
+
+                if (_isAdmin)
+                {
+                    var creators = new List<CreatorFilterOption>
+                    {
+                        new CreatorFilterOption { UserId = null, Label = "Všichni uživatelé" }
+                    };
+
+                    creators.AddRange(_users
+                        .OrderBy(u => u.Jmeno)
+                        .Select(u => new CreatorFilterOption
+                        {
+                            UserId = u.Id,
+                            Label = $"{u.Jmeno} ({u.Role})"
+                        }));
+
+                    AllCreatorFilter.ItemsSource = creators;
+                    AllCreatorFilter.SelectedIndex = 0;
+                }
             }
             finally
             {
@@ -388,16 +370,16 @@ namespace TicketSystem
 
         private void ReloadAllTicketsFromDb()
         {
-            if (IsAdmin())
+            var priorita = AllPriorityFilter.SelectedItem as string;
+            if (string.Equals(priorita, "Vše", StringComparison.Ordinal))
+                priorita = null;
+
+            var kategorie = AllCategoryFilter.SelectedItem as string;
+            if (string.Equals(kategorie, "Vše", StringComparison.Ordinal))
+                kategorie = null;
+
+            if (_isAdmin)
             {
-                var priorita = AllPriorityFilter.SelectedItem as string;
-                if (string.Equals(priorita, "Vše", StringComparison.Ordinal))
-                    priorita = null;
-
-                var kategorie = AllCategoryFilter.SelectedItem as string;
-                if (string.Equals(kategorie, "Vše", StringComparison.Ordinal))
-                    kategorie = null;
-
                 var creator = AllCreatorFilter.SelectedItem as CreatorFilterOption;
                 var creatorId = creator?.UserId;
 
@@ -405,7 +387,7 @@ namespace TicketSystem
             }
             else
             {
-                _allTicketsBacking = GetVisibleTickets(_repo.GetAll())
+                _allTicketsBacking = GetVisibleTickets(_repo.GetFiltered(priorita, kategorie, null))
                     .OrderByDescending(t => t.Vytvoreno)
                     .ToList();
             }
@@ -417,7 +399,7 @@ namespace TicketSystem
 
         private void AllTicketsFilter_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (!IsAdmin() || _isInitializingAllTicketsFilters)
+            if (_isInitializingAllTicketsFilters)
                 return;
 
             ReloadAllTicketsFromDb();
@@ -425,12 +407,11 @@ namespace TicketSystem
 
         private void ClearAllTicketsFilters_Click(object? sender, RoutedEventArgs e)
         {
-            if (!IsAdmin())
-                return;
-
             AllPriorityFilter.SelectedIndex = 0;
             AllCategoryFilter.SelectedIndex = 0;
-            AllCreatorFilter.SelectedIndex = 0;
+
+            if (_isAdmin)
+                AllCreatorFilter.SelectedIndex = 0;
 
             ReloadAllTicketsFromDb();
         }
@@ -560,19 +541,15 @@ namespace TicketSystem
 
         private void OpenAddUser_Click(object? sender, RoutedEventArgs e)
         {
-            if (!IsAdmin())
+            if (!_isAdmin)
             {
                 CurrentUserInfoText.Text = "Přístup zamítnut: správu uživatelů má jen Admin.";
                 return;
             }
 
-            DashboardView.IsVisible = false;
-            NewTicketView.IsVisible = false;
-            AllTicketsView.IsVisible = false;
-            StatisticsView.IsVisible = false;
-            AddUserView.IsVisible = true;
-
+            ShowView(AddUserView);
             AddUserErrorText.Text = "";
+            RefreshUsersList();
         }
 
         private void ClearNewUserForm_Click(object? sender, RoutedEventArgs e)
@@ -585,7 +562,7 @@ namespace TicketSystem
 
         private void CreateUser_Click(object? sender, RoutedEventArgs e)
         {
-            if (!IsAdmin())
+            if (!_isAdmin)
             {
                 AddUserErrorText.Text = "Uživatele může vytvářet jen Admin.";
                 return;
@@ -610,11 +587,54 @@ namespace TicketSystem
 
                 AddUserErrorText.Text = "Uživatel byl úspěšně vytvořen.";
                 ClearNewUserForm_Click(null, new RoutedEventArgs());
+                RefreshUsersList();
             }
             catch (ArgumentException ex)
             {
                 AddUserErrorText.Text = ex.Message;
             }
+        }
+
+        private void DeleteUser_Click(object? sender, RoutedEventArgs e)
+        {
+            if (!_isAdmin)
+            {
+                AddUserErrorText.Text = "Uživatele může mazat jen Admin.";
+                return;
+            }
+
+            var selectedIndex = UsersList.SelectedIndex;
+            if (selectedIndex < 0 || selectedIndex >= _users.Count)
+            {
+                AddUserErrorText.Text = "Vyber uživatele ke smazání.";
+                return;
+            }
+
+            var selected = _users[selectedIndex];
+            if (selected.Id == CurrentUserId)
+            {
+                AddUserErrorText.Text = "Nelze smazat aktuálně přihlášeného uživatele.";
+                return;
+            }
+
+            try
+            {
+                _userRepo.DeleteByAdmin(selected.Id);
+                RefreshUsersList();
+                AddUserErrorText.Text = "Uživatel byl smazán.";
+            }
+            catch (ArgumentException ex)
+            {
+                AddUserErrorText.Text = ex.Message;
+            }
+        }
+
+        private void RefreshUsersList()
+        {
+            _users = _userRepo.GetAll();
+            UsersList.ItemsSource = _users
+                .Select(u => $"{u.Id} | {u.Jmeno} | {u.Role} | {u.Login}")
+                .ToList();
         }
     }
 }

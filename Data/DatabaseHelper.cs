@@ -28,6 +28,17 @@ namespace TicketSystem.Data
 
             using var tx = conn.BeginTransaction();
 
+            CreateTables(conn, tx);
+            ApplyMigrations(conn, tx);
+
+            if (isNewDb)
+                Seed(conn, tx);
+
+            tx.Commit();
+        }
+
+        private static void CreateTables(SQLiteConnection conn, SQLiteTransaction tx)
+        {
             using (var usersCmd = new SQLiteCommand(@"
                 CREATE TABLE IF NOT EXISTS Users (
                     Id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,8 +52,6 @@ namespace TicketSystem.Data
             {
                 usersCmd.ExecuteNonQuery();
             }
-
-            EnsureUserAuthColumns(conn, tx);
 
             using (var ticketsCmd = new SQLiteCommand(@"
                 CREATE TABLE IF NOT EXISTS Tickets (
@@ -69,17 +78,23 @@ namespace TicketSystem.Data
                     TicketId   INTEGER NOT NULL,
                     UserId     INTEGER NOT NULL,
                     Text       TEXT NOT NULL,
-                    Vytvoreno  TEXT NOT NULL DEFAULT (datetime('now')),
+                    Vytvoreno  TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
                     FOREIGN KEY (TicketId) REFERENCES Tickets(Id) ON DELETE CASCADE,
                     FOREIGN KEY (UserId) REFERENCES Users(Id)
                 );", conn, tx))
             {
                 commentsCmd.ExecuteNonQuery();
             }
+        }
 
+        private static void ApplyMigrations(SQLiteConnection conn, SQLiteTransaction tx)
+        {
+            EnsureUserAuthColumns(conn, tx);
+        }
+
+        private static void Seed(SQLiteConnection conn, SQLiteTransaction tx)
+        {
             SeedDefaultUsers(conn, tx);
-
-            tx.Commit();
         }
 
         public static string HashPassword(string password)
@@ -143,8 +158,8 @@ namespace TicketSystem.Data
 
         private static void SeedDefaultUsers(SQLiteConnection conn, SQLiteTransaction tx)
         {
-            UpsertUser(conn, tx, "Admin", "admin@tickets.local", "Admin", "admin", "admin123", forceResetPassword: false);
-            UpsertUser(conn, tx, "User", "user@tickets.local", "User", "user", "user123", forceResetPassword: false);
+            UpsertUser(conn, tx, "Admin", "admin@tickets.local", "Admin", "admin", "admin123");
+            UpsertUser(conn, tx, "User", "user@tickets.local", "User", "user", "user123");
         }
 
         private static void UpsertUser(
@@ -154,25 +169,29 @@ namespace TicketSystem.Data
             string email,
             string role,
             string login,
-            string heslo,
-            bool forceResetPassword = false)
+            string heslo)
         {
-            var salt = GenerateSalt();
-            var hesloHash = HashPassword(heslo, salt);
+            var exists = UserExists(conn, tx, email);
 
-            using var insertCmd = new SQLiteCommand(@"
-                INSERT INTO Users (Jmeno, Email, Role, Login, HesloHash, HesloSalt)
-                SELECT @jmeno, @email, @role, @login, @hesloHash, @hesloSalt
-                WHERE NOT EXISTS (SELECT 1 FROM Users WHERE Email = @email);", conn, tx);
+            if (!exists)
+            {
+                var salt = GenerateSalt();
+                var hesloHash = HashPassword(heslo, salt);
 
-            insertCmd.Parameters.AddWithValue("@jmeno", jmeno);
-            insertCmd.Parameters.AddWithValue("@email", email);
-            insertCmd.Parameters.AddWithValue("@role", role);
-            insertCmd.Parameters.AddWithValue("@login", login);
-            insertCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
-            insertCmd.Parameters.AddWithValue("@hesloSalt", salt);
+                using var insertCmd = new SQLiteCommand(@"
+                    INSERT INTO Users (Jmeno, Email, Role, Login, HesloHash, HesloSalt)
+                    VALUES (@jmeno, @email, @role, @login, @hesloHash, @hesloSalt);", conn, tx);
 
-            var inserted = insertCmd.ExecuteNonQuery() > 0;
+                insertCmd.Parameters.AddWithValue("@jmeno", jmeno);
+                insertCmd.Parameters.AddWithValue("@email", email);
+                insertCmd.Parameters.AddWithValue("@role", role);
+                insertCmd.Parameters.AddWithValue("@login", login);
+                insertCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
+                insertCmd.Parameters.AddWithValue("@hesloSalt", salt);
+
+                insertCmd.ExecuteNonQuery();
+                return;
+            }
 
             using var updateProfileCmd = new SQLiteCommand(@"
                 UPDATE Users
@@ -186,20 +205,14 @@ namespace TicketSystem.Data
             updateProfileCmd.Parameters.AddWithValue("@role", role);
             updateProfileCmd.Parameters.AddWithValue("@login", login);
             updateProfileCmd.ExecuteNonQuery();
+        }
 
-            if (!inserted && forceResetPassword)
-            {
-                using var updatePasswordCmd = new SQLiteCommand(@"
-                    UPDATE Users
-                    SET HesloHash = @hesloHash,
-                        HesloSalt = @hesloSalt
-                    WHERE Email = @email;", conn, tx);
-
-                updatePasswordCmd.Parameters.AddWithValue("@email", email);
-                updatePasswordCmd.Parameters.AddWithValue("@hesloHash", hesloHash);
-                updatePasswordCmd.Parameters.AddWithValue("@hesloSalt", salt);
-                updatePasswordCmd.ExecuteNonQuery();
-            }
+        private static bool UserExists(SQLiteConnection conn, SQLiteTransaction tx, string email)
+        {
+            using var cmd = new SQLiteCommand("SELECT 1 FROM Users WHERE Email = @email LIMIT 1;", conn, tx);
+            cmd.Parameters.AddWithValue("@email", email);
+            using var r = cmd.ExecuteReader();
+            return r.Read();
         }
     }
 }
